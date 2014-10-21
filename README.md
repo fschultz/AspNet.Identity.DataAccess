@@ -9,4 +9,5 @@ This library tries to match the functionality of the Entity Framework ASP.NET Id
 
 ## Requirements ##
 
-Requires Microsoft ASP.NET Indentity Core 2.1.0 or later
+* Microsoft ASP.NET Indentity Core 2.1.0 or later
+* Telerik Data Access Core
