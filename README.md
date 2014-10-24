@@ -13,6 +13,32 @@ The **UserStore** implements **_IUserStore_, _IUserRoleStore_, _IUserClaimStore_
 ###RoleStore implementation###
 The **RoleStore** implements **_IRoleStore_** and **_IQueryableRoleStore_**.
 
+##Example##
+
+This example creates a role if it not already exists and assigns a user to the role:
+```
+    var roleManager = new RoleManager<IdentityRole, Guid>(new RoleStore());
+
+    var roleName = "MyGroup";
+
+    var role = roleManager.FindByName(roleName);
+
+    if (role == null) {
+        role = new IdentityRole(roleName);
+        roleManager.Create(role);
+    }
+
+    var userManager = new UserManager<IdentityUser, Guid>(new UserStore());
+
+    var user = userManager.FindByName("MyUser");
+
+    if (user != null) {
+        userManager.AddToRole(user.Id, roleName);
+    }
+```
+
+If you wish to use this implementation together with Owin check out how to migrate from the Entity Framework implemention in the ASP.NET web application template here: http://kaliko.com/blog/aspnet-template-for-data-access-identity/
+
 ## Requirements ##
 
 * Microsoft ASP.NET Indentity Core 2.1.0 or later
