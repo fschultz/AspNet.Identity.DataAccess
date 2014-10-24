@@ -48,7 +48,7 @@ namespace AspNet.Identity.DataAccess {
 
         public IdentityUser() {
             Id = Guid.NewGuid();
-
+            
             Claims = new List<IdentityUserClaim>();
             Logins = new List<IdentityUserLogin>();
             Roles = new List<IdentityRole>();

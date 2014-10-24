@@ -61,6 +61,7 @@
     <Compile Include="Data\Maps\IdentityVersionMap.cs" />
     <Compile Include="Data\Maps\IdentityUserClaimMap.cs" />
     <Compile Include="Data\Maps\IdentityUserLoginMap.cs" />
+    <Compile Include="IdentityExtensions.cs" />
     <Compile Include="IdentityRole.cs" />
     <Compile Include="IdentityUser.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

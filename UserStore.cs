@@ -482,8 +482,13 @@ namespace AspNet.Identity.DataAccess {
                 throw new ArgumentNullException("user");
             }
 
+            if (user.Created == DateTime.MinValue) {
+                user.Created = DateTime.Now;
+            }
+
             user.Updated = DateTime.Now;
 
+            _context.Add(user);
             _context.SaveChanges();
 
             return Task.FromResult(0);
@@ -495,7 +500,8 @@ namespace AspNet.Identity.DataAccess {
             }
 
             user.Updated = DateTime.Now;
-            
+
+            _context.AttachCopy(user);
             _context.SaveChanges();
 
             return Task.FromResult(0);

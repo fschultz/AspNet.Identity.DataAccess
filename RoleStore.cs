@@ -74,6 +74,7 @@ namespace AspNet.Identity.DataAccess {
                 throw new ArgumentNullException("role");
             }
 
+            _context.AttachCopy(role);
             _context.SaveChanges();
 
             return Task.FromResult<Object>(null);
