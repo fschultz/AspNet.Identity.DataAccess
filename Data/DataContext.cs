@@ -24,7 +24,7 @@ namespace AspNet.Identity.DataAccess.Data {
     using Telerik.OpenAccess;
 
     public class DataContext : OpenAccessContext {
-        private const int DatabaseVersion = 1;
+        private const int DatabaseVersion = 2;
         private static string _connectionStringName = "AspNetIdentity";
         private static readonly MetadataContainer MetadataContainer = new DataMetadataSource().GetModel();
         private static readonly BackendConfiguration BackendConfiguration = new BackendConfiguration();
@@ -81,6 +81,10 @@ namespace AspNet.Identity.DataAccess.Data {
         public static string ConnectionStringName {
             get { return _connectionStringName; }
             set { _connectionStringName = value; }
+        }
+
+        public static DataContext Create() {
+            return new DataContext();
         }
 
         #region Scheme synchronization

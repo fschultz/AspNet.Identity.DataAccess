@@ -26,7 +26,6 @@ namespace AspNet.Identity.DataAccess.Data.Maps {
             HasProperty(x => x.Updated).ToColumn("Updated").IsNotNullable();
             HasProperty(x => x.FirstName).ToColumn("FirstName").IsNullable().WithVariableLength(100);
             HasProperty(x => x.SurName).ToColumn("SurName").IsNullable().WithVariableLength(100);
-            HasProperty(x => x.Phone).ToColumn("Phone").IsNullable().WithVariableLength(100);
             HasProperty(x => x.External).ToColumn("External").IsNotNullable();
             HasProperty(x => x.Email).ToColumn("Email").IsNullable().WithVariableLength(256);
             HasProperty(x => x.EmailConfirmed).ToColumn("EmailConfirmed").IsNotNullable();
@@ -40,6 +39,7 @@ namespace AspNet.Identity.DataAccess.Data.Maps {
             HasProperty(x => x.AccessFailedCount).ToColumn("AccessFailedCount").IsNotNullable();
             HasProperty(x => x.UserName).ToColumn("UserName").IsNotNullable().WithVariableLength(256);
             HasProperty(x => x.ProviderId).ToColumn("ProviderId").IsNullable();
+            HasProperty(x => x.LastLoginDate).ToColumn("LastLoginDate").IsNullable();
             
             HasAssociation(x => x.Logins).WithOpposite(x => x.User).ToColumn("UserId").HasConstraint((y, x) => x.UserId == y.Id);
             HasAssociation(x => x.Claims).WithOpposite(x => x.User).ToColumn("UserId").HasConstraint((y, x) => x.UserId == y.Id);

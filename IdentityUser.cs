@@ -37,9 +37,9 @@ namespace AspNet.Identity.DataAccess {
         public Guid ProviderId { get; set; }
         public DateTime Created { get; set; }
         public DateTime Updated { get; set; }
+        public DateTime? LastLoginDate { get; set; }
         public string FirstName { get; set; }
         public string SurName { get; set; }
-        public string Phone { get; set; }
         public bool External { get; set; }
 
         public IList<IdentityUserClaim> Claims { get; set; }
