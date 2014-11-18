@@ -7,9 +7,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("AspNet.Identity.DataAccess")]
 [assembly: AssemblyDescription("ASP.NET Identity provider for Telerik Data Access")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("Fredrik Schultz / Kaliko")]
 [assembly: AssemblyProduct("AspNet.Identity.DataAccess")]
-[assembly: AssemblyCopyright("Copyright ©  2014")]
+[assembly: AssemblyCopyright("Copyright © Fredrik Schultz / Kaliko")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -31,5 +31,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("2.1.0.3")]
-[assembly: AssemblyFileVersion("2.1.0.3")]
+[assembly: AssemblyVersion("2.1.0.6")]
+[assembly: AssemblyFileVersion("2.1.0.6")]

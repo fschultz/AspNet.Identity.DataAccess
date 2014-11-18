@@ -291,7 +291,7 @@ namespace AspNet.Identity.DataAccess {
             var userLogin = _context.UserLogins.FirstOrDefault(l => l.LoginProvider == provider && l.ProviderKey == key);
 
             if (userLogin == null) {
-                return null;
+                return Task.FromResult<IdentityUser>(null);
             }
 
             var user = _context.UsersWithIncludes.FirstOrDefault(u => u.Id.Equals(userLogin.UserId));
