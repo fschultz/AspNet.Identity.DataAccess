@@ -41,5 +41,5 @@ If you wish to use this implementation together with Owin check out how to migra
 
 ## Requirements ##
 
-* Microsoft ASP.NET Indentity Core 2.1.0 or later
+* Microsoft ASP.NET Indentity Core 2.2.0 or later
 * Telerik Data Access Core
