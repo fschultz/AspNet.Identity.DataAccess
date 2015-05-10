@@ -39,6 +39,54 @@ This example creates a role if it not already exists and assigns a user to the r
 
 If you wish to use this implementation together with Owin check out how to migrate from the Entity Framework implemention in the ASP.NET web application template here: http://kaliko.com/blog/aspnet-template-for-data-access-identity/
 
+## Extending the user class (experimental) ##
+
+
+Inherit from the *IdentityUser* class and extend with your new properties:
+```
+    public class MyUser : IdentityUser {
+        public string MyField { get; set; }
+    }
+```
+
+Create a new mapping configuration for your extended class and map the new properties. Be sure to map the type as flat inheritance to the existing table "AspNetUsers":
+```
+    public class MyUserMap : MappingConfiguration<MyUser> {
+        public MyUserMap() {
+            MapType(x => new { }).Inheritance(InheritanceStrategy.Flat).ToTable("AspNetUsers");
+
+            HasProperty(x => x.MyField).ToColumn("MyField").IsNotNullable();
+        }
+    }
+```
+
+Create a new metadata class and inherit from *DataMetaSource*. Override *PrepareMapping* and add your new mapping class:
+```
+    public class MyDataMetadataSource : DataMetadataSource {
+        protected override IList<MappingConfiguration> PrepareMapping() {
+            var configurations = base.PrepareMapping();
+
+            configurations.Add(new MyUserMap());
+
+            return configurations;
+        }
+    }
+```
+
+Somewhere in your startup code, set your new metadata on the data context:
+```
+    DataContext.MetadataContainer = new MyDataMetadataSource().GetModel();
+```
+
+And you're now able to create a UserStore of your extended user type:
+```
+    var userStore = new UserStore<MyUser>();
+
+    userStore.CreateAsync(new MyUser() { UserName = "MyUser", MyField = "Something cool :)"} );
+```
+
+This functionality is work in progress and might change in the stable release.
+
 ## Requirements ##
 
 * Microsoft ASP.NET Indentity Core 2.2.0 or later
