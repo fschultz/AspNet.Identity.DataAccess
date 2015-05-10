@@ -17,8 +17,8 @@
 namespace AspNet.Identity.DataAccess {
     using System;
     using System.Security.Claims;
-
-    public class IdentityUserClaim {
+    
+    public class IdentityUserClaim  {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
         public string ClaimType { get; set; }

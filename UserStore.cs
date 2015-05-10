@@ -22,49 +22,73 @@ namespace AspNet.Identity.DataAccess {
     using System.Security.Claims;
     using System.Threading.Tasks;
     using System;
+    using Telerik.OpenAccess;
 
-    public class UserStore : 
-        IUserRoleStore<IdentityUser, Guid> ,
-        IUserClaimStore<IdentityUser, Guid>,
-        IUserPasswordStore<IdentityUser, Guid>,
-        IUserSecurityStampStore<IdentityUser, Guid>,
-        IUserEmailStore<IdentityUser, Guid>,
-        IUserPhoneNumberStore<IdentityUser, Guid>,
-        IUserTwoFactorStore<IdentityUser, Guid>,
-        IUserLockoutStore<IdentityUser, Guid>,
-        IUserLoginStore<IdentityUser, Guid>,
-        IQueryableUserStore<IdentityUser, Guid> {
-        private DataContext _context;
+    public class UserStore : UserStore<IdentityUser> {
+        public UserStore() {}
+        public UserStore(OpenAccessContext context) : base(context) {}
+    }
+
+    public class UserStore<TUser> : UserStore<TUser, IdentityUserClaim, IdentityUserLogin, IdentityRole>
+        where TUser : IdentityUser {
+        public UserStore() {}
+        public UserStore(OpenAccessContext context) : base(context) {}
+    }
+
+    public class UserStore<TUser, TUserClaim, TUserLogin, TRole> :
+        IUserRoleStore<TUser, Guid>,
+        IUserClaimStore<TUser, Guid>,
+        IUserPasswordStore<TUser, Guid>,
+        IUserSecurityStampStore<TUser, Guid>,
+        IUserEmailStore<TUser, Guid>,
+        IUserPhoneNumberStore<TUser, Guid>,
+        IUserTwoFactorStore<TUser, Guid>,
+        IUserLockoutStore<TUser, Guid>,
+        IUserLoginStore<TUser, Guid>,
+        IQueryableUserStore<TUser, Guid>
+        where TUser : IdentityUser
+        where TUserClaim : IdentityUserClaim, 
+        new() where TUserLogin : IdentityUserLogin, 
+        new() where TRole : IdentityRole {
+        private OpenAccessContext _context;
         private readonly bool _isDisposable;
 
+        #region Constructors
+
         public UserStore() {
-            _context = new DataContext();
+            _context = new DataContext<TUser>();
             _isDisposable = true;
         }
 
-        public UserStore(DataContext context) {
+        public UserStore(OpenAccessContext context) {
+            if (context == null) {
+                throw new ArgumentNullException("context");
+            }
+
             _context = context;
             _isDisposable = false;
         }
-
+        
         static UserStore() {
             DataContext.SynchronizeSchema();
         }
 
+        #endregion
+
 
         #region IUserClaimStore
 
-        public Task<IList<Claim>> GetClaimsAsync(IdentityUser user) {
+        public Task<IList<Claim>> GetClaimsAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
 
-            IList<Claim> claims = _context.UserClaims.Where(c => c.UserId == user.Id).Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
+            IList<Claim> claims = _context.GetAll<TUserClaim>().Where(c => c.UserId == user.Id).Select(c => new Claim(c.ClaimType, c.ClaimValue)).ToList();
 
             return Task.FromResult(claims);
         }
 
-        public Task AddClaimAsync(IdentityUser user, Claim claim) {
+        public Task AddClaimAsync(TUser user, Claim claim) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -76,14 +100,14 @@ namespace AspNet.Identity.DataAccess {
             var alreadyHasClaim = GetUserClaim(user, claim).Any();
 
             if (!alreadyHasClaim) {
-                _context.Add(new IdentityUserClaim(user.Id, claim));
+                _context.Add(new TUserClaim { Id = user.Id, ClaimType =  claim.Type, ClaimValue = claim.Value });
                 _context.SaveChanges();
             }
 
             return Task.FromResult(0);
         }
 
-        public Task RemoveClaimAsync(IdentityUser user, Claim claim) {
+        public Task RemoveClaimAsync(TUser user, Claim claim) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -104,7 +128,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserEmailStore
 
-        public Task SetEmailAsync(IdentityUser user, string email) {
+        public Task SetEmailAsync(TUser user, string email) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -114,7 +138,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<string> GetEmailAsync(IdentityUser user) {
+        public Task<string> GetEmailAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -122,7 +146,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.Email);
         }
 
-        public Task<bool> GetEmailConfirmedAsync(IdentityUser user) {
+        public Task<bool> GetEmailConfirmedAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -130,7 +154,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.EmailConfirmed);
         }
 
-        public Task SetEmailConfirmedAsync(IdentityUser user, bool confirmed) {
+        public Task SetEmailConfirmedAsync(TUser user, bool confirmed) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -140,12 +164,12 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<IdentityUser> FindByEmailAsync(string email) {
+        public Task<TUser> FindByEmailAsync(string email) {
             if (email == null) {
                 throw new ArgumentNullException("email");
             }
 
-            var user = _context.UsersWithIncludes.FirstOrDefault(u => u.Email == email);
+            var user = UsersWithIncludes.FirstOrDefault(u => u.Email == email);
 
             return Task.FromResult(user);
         }
@@ -155,7 +179,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserLockoutStore
 
-        public Task<DateTimeOffset> GetLockoutEndDateAsync(IdentityUser user) {
+        public Task<DateTimeOffset> GetLockoutEndDateAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -167,7 +191,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(new DateTimeOffset());
         }
 
-        public Task SetLockoutEndDateAsync(IdentityUser user, DateTimeOffset lockoutEnd) {
+        public Task SetLockoutEndDateAsync(TUser user, DateTimeOffset lockoutEnd) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -182,7 +206,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<int> IncrementAccessFailedCountAsync(IdentityUser user) {
+        public Task<int> IncrementAccessFailedCountAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -192,7 +216,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.AccessFailedCount);
         }
 
-        public Task ResetAccessFailedCountAsync(IdentityUser user) {
+        public Task ResetAccessFailedCountAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -202,7 +226,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<int> GetAccessFailedCountAsync(IdentityUser user) {
+        public Task<int> GetAccessFailedCountAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -210,7 +234,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.AccessFailedCount);
         }
 
-        public Task<bool> GetLockoutEnabledAsync(IdentityUser user) {
+        public Task<bool> GetLockoutEnabledAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -218,7 +242,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.LockoutEnabled);
         }
 
-        public Task SetLockoutEnabledAsync(IdentityUser user, bool enabled) {
+        public Task SetLockoutEnabledAsync(TUser user, bool enabled) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -233,7 +257,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserLoginStore
 
-        public Task AddLoginAsync(IdentityUser user, UserLoginInfo login) {
+        public Task AddLoginAsync(TUser user, UserLoginInfo login) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -242,7 +266,7 @@ namespace AspNet.Identity.DataAccess {
                 throw new ArgumentNullException("login");
             }
 
-            user.Logins.Add(new IdentityUserLogin {
+            user.Logins.Add(new TUserLogin {
                 UserId = user.Id,
                 ProviderKey = login.ProviderKey,
                 LoginProvider = login.LoginProvider
@@ -251,7 +275,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task RemoveLoginAsync(IdentityUser user, UserLoginInfo login) {
+        public Task RemoveLoginAsync(TUser user, UserLoginInfo login) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -271,7 +295,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<IList<UserLoginInfo>> GetLoginsAsync(IdentityUser user) {
+        public Task<IList<UserLoginInfo>> GetLoginsAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -281,20 +305,20 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(result);
         }
 
-        public Task<IdentityUser> FindAsync(UserLoginInfo login) {
+        public Task<TUser> FindAsync(UserLoginInfo login) {
             if (login == null) {
                 throw new ArgumentNullException("login");
             }
 
             var provider = login.LoginProvider;
             var key = login.ProviderKey;
-            var userLogin = _context.UserLogins.FirstOrDefault(l => l.LoginProvider == provider && l.ProviderKey == key);
+            var userLogin = _context.GetAll<TUserLogin>().FirstOrDefault(l => l.LoginProvider == provider && l.ProviderKey == key);
 
             if (userLogin == null) {
-                return Task.FromResult<IdentityUser>(null);
+                return Task.FromResult<TUser>(null);
             }
 
-            var user = _context.UsersWithIncludes.FirstOrDefault(u => u.Id.Equals(userLogin.UserId));
+            var user = UsersWithIncludes.FirstOrDefault(u => u.Id.Equals(userLogin.UserId));
 
             return Task.FromResult(user);
         }
@@ -304,7 +328,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserPasswordStore
 
-        public Task SetPasswordHashAsync(IdentityUser user, string passwordHash) {
+        public Task SetPasswordHashAsync(TUser user, string passwordHash) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -314,7 +338,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<string> GetPasswordHashAsync(IdentityUser user) {
+        public Task<string> GetPasswordHashAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -322,7 +346,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.PasswordHash);
         }
 
-        public Task<bool> HasPasswordAsync(IdentityUser user) {
+        public Task<bool> HasPasswordAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -337,7 +361,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserPhoneNumberStore
 
-        public Task SetPhoneNumberAsync(IdentityUser user, string phoneNumber) {
+        public Task SetPhoneNumberAsync(TUser user, string phoneNumber) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -347,7 +371,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<string> GetPhoneNumberAsync(IdentityUser user) {
+        public Task<string> GetPhoneNumberAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -355,7 +379,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.PhoneNumber);
         }
 
-        public Task<bool> GetPhoneNumberConfirmedAsync(IdentityUser user) {
+        public Task<bool> GetPhoneNumberConfirmedAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -363,7 +387,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(user.PhoneNumberConfirmed);
         }
 
-        public Task SetPhoneNumberConfirmedAsync(IdentityUser user, bool confirmed) {
+        public Task SetPhoneNumberConfirmedAsync(TUser user, bool confirmed) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -378,7 +402,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserRoleStore
 
-        public Task AddToRoleAsync(IdentityUser user, string roleName) {
+        public Task AddToRoleAsync(TUser user, string roleName) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -387,7 +411,7 @@ namespace AspNet.Identity.DataAccess {
                 throw new ArgumentException("roleName");
             }
 
-            var role = _context.Roles.FirstOrDefault(r => r.Name == roleName);
+            var role = _context.GetAll<TRole>().FirstOrDefault(r => r.Name == roleName);
             if (role != null && user.Roles.All(r => r.Id != role.Id)) {
                 user.Roles.Add(role);
                 _context.SaveChanges();
@@ -396,15 +420,15 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task RemoveFromRoleAsync(IdentityUser user, string roleName) {
+        public Task RemoveFromRoleAsync(TUser user, string roleName) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
             if (String.IsNullOrWhiteSpace(roleName)) {
                 throw new ArgumentNullException("roleName");
             }
-            
-            var role = _context.Roles.FirstOrDefault(r => r.Name == roleName);
+
+            var role = _context.GetAll<TRole>().FirstOrDefault(r => r.Name == roleName);
             if (role != null && user.Roles.Any(r => r.Id == role.Id)) {
                 user.Roles.Remove(role);
                 _context.SaveChanges();
@@ -413,7 +437,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<IList<string>> GetRolesAsync(IdentityUser user) {
+        public Task<IList<string>> GetRolesAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -423,7 +447,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult<IList<string>>(roles);
         }
 
-        public Task<bool> IsInRoleAsync(IdentityUser user, string roleName) {
+        public Task<bool> IsInRoleAsync(TUser user, string roleName) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -442,7 +466,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserSecurityStampStore
 
-        public Task SetSecurityStampAsync(IdentityUser user, string stamp) {
+        public Task SetSecurityStampAsync(TUser user, string stamp) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -452,7 +476,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<string> GetSecurityStampAsync(IdentityUser user) {
+        public Task<string> GetSecurityStampAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -477,7 +501,7 @@ namespace AspNet.Identity.DataAccess {
             _context = null;
         }
 
-        public Task CreateAsync(IdentityUser user) {
+        public Task CreateAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -494,7 +518,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task UpdateAsync(IdentityUser user) {
+        public Task UpdateAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -507,7 +531,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task DeleteAsync(IdentityUser user) {
+        public Task DeleteAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -517,22 +541,22 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<IdentityUser> FindByIdAsync(Guid userId) {
+        public Task<TUser> FindByIdAsync(Guid userId) {
             if (userId == null) {
                 throw new ArgumentNullException("userId");
             }
 
-            var user = _context.UsersWithIncludes.FirstOrDefault(u => u.Id == userId);
+            var user = UsersWithIncludes.FirstOrDefault(u => u.Id == userId);
             
             return Task.FromResult(user);
         }
 
-        public Task<IdentityUser> FindByNameAsync(string userName) {
+        public Task<TUser> FindByNameAsync(string userName) {
             if (string.IsNullOrEmpty(userName)) {
                 throw new ArgumentNullException("userName");
             }
 
-            var user = _context.UsersWithIncludes.FirstOrDefault(u => u.UserName == userName);
+            var user = UsersWithIncludes.FirstOrDefault(u => u.UserName == userName);
             
             return Task.FromResult(user);
         }
@@ -542,7 +566,7 @@ namespace AspNet.Identity.DataAccess {
 
         #region IUserTwoFactorStore
 
-        public Task SetTwoFactorEnabledAsync(IdentityUser user, bool enabled) {
+        public Task SetTwoFactorEnabledAsync(TUser user, bool enabled) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -552,7 +576,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult(0);
         }
 
-        public Task<bool> GetTwoFactorEnabledAsync(IdentityUser user) {
+        public Task<bool> GetTwoFactorEnabledAsync(TUser user) {
             if (user == null) {
                 throw new ArgumentNullException("user");
             }
@@ -565,8 +589,8 @@ namespace AspNet.Identity.DataAccess {
 
         #region IQueryableUserStore
 
-        public IQueryable<IdentityUser> Users {
-            get { return _context.Users; }
+        public IQueryable<TUser> Users {
+            get { return _context.GetAll<TUser>(); }
         }
 
         #endregion
@@ -574,8 +598,17 @@ namespace AspNet.Identity.DataAccess {
 
         #region Private functions
 
-        private IQueryable<IdentityUserClaim> GetUserClaim(IUser<Guid> user, Claim claim) {
-            return _context.UserClaims.Where(c => c.ClaimType == claim.Type && c.ClaimValue == claim.Value && c.UserId == user.Id);
+        private IQueryable<TUserClaim> GetUserClaim(IUser<Guid> user, Claim claim) {
+            return _context.GetAll<TUserClaim>().Where(c => c.ClaimType == claim.Type && c.ClaimValue == claim.Value && c.UserId == user.Id);
+        }
+
+        private IQueryable<TUser> UsersWithIncludes {
+            get {
+                return _context.GetAll<TUser>()
+                    .Include(u => u.Claims)
+                    .Include(u => u.Logins)
+                    .Include(u => u.Roles);
+            }
         }
 
         #endregion

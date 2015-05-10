@@ -23,11 +23,20 @@ namespace AspNet.Identity.DataAccess.Data {
     using Telerik.OpenAccess.Metadata;
     using Telerik.OpenAccess;
 
-    public class DataContext : OpenAccessContext {
+    public class DataContext : DataContext<IdentityUser> {
+        public DataContext(OpenAccessContextBase otherContext) : base(otherContext) {}
+        public DataContext() {}
+        public DataContext(string connectionStringName) : base(connectionStringName) {}
+    }
+
+    public class DataContext<TUser> : OpenAccessContext where TUser : IdentityUser {
         private const int DatabaseVersion = 2;
         private static string _connectionStringName = "AspNetIdentity";
-        private static readonly MetadataContainer MetadataContainer = new DataMetadataSource().GetModel();
-        private static readonly BackendConfiguration BackendConfiguration = new BackendConfiguration();
+        private static MetadataContainer _metadataContainer = new DataMetadataSource().GetModel();
+        private static BackendConfiguration _backendConfiguration = new BackendConfiguration();
+
+        public DataContext(OpenAccessContextBase otherContext) : base(otherContext) {
+        }
 
         public DataContext() : base(ConnectionStringName, BackendConfiguration, MetadataContainer) {
         }
@@ -54,23 +63,14 @@ namespace AspNet.Identity.DataAccess.Data {
             get { return GetAll<IdentityUserLogin>(); }
         }
 
-        public IQueryable<IdentityUser> Users {
-            get { return GetAll<IdentityUser>(); }
+        public IQueryable<TUser> Users {
+            get { return GetAll<TUser>(); }
         }
 
         public IQueryable<IdentityVersion> Versions {
             get { return GetAll<IdentityVersion>(); }
         }
-
-        public IQueryable<IdentityUser> UsersWithIncludes {
-            get {
-                return Users
-                    .Include(u => u.Claims)
-                    .Include(u => u.Logins)
-                    .Include(u => u.Roles);
-            }
-        }
-
+        
         public IQueryable<IdentityRole> RolesWithIncludes {
             get {
                 return Roles
@@ -83,8 +83,18 @@ namespace AspNet.Identity.DataAccess.Data {
             set { _connectionStringName = value; }
         }
 
-        public static DataContext Create() {
-            return new DataContext();
+        public static MetadataContainer MetadataContainer {
+            get { return _metadataContainer; }
+            set { _metadataContainer = value; }
+        }
+
+        public static BackendConfiguration BackendConfiguration {
+            get { return _backendConfiguration; }
+            set { _backendConfiguration = value; }
+        }
+
+        public static DataContext<TUser> Create() {
+            return new DataContext<TUser>();
         }
 
         #region Scheme synchronization
@@ -96,7 +106,7 @@ namespace AspNet.Identity.DataAccess.Data {
                 return;
             }
 
-            var context = new DataContext();
+            var context = new DataContext<TUser>();
             context.UpdateSchema();
 
             _isSchemaInSync = true;
@@ -137,10 +147,7 @@ namespace AspNet.Identity.DataAccess.Data {
         private int GetCurrentVersion() {
             try {
                 var version = Versions.FirstOrDefault();
-                if (version == null) {
-                    return 0;
-                }
-                return version.DatabaseVersion;
+                return version == null ? 0 : version.DatabaseVersion;
             }
             catch {
                 return 0;

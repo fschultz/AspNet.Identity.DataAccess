@@ -20,10 +20,18 @@ namespace AspNet.Identity.DataAccess {
     using System.Linq;
     using System.Threading.Tasks;
     using System;
-    
-    public class RoleStore :
-        IQueryableRoleStore<IdentityRole, Guid> {
-        private DataContext _context;
+    using Telerik.OpenAccess;
+
+    public class RoleStore : RoleStore<IdentityRole> {
+        public RoleStore() {}
+        public RoleStore(OpenAccessContext context) : base(context) {}
+    }
+
+
+    public class RoleStore<TRole> :
+        IQueryableRoleStore<TRole, Guid>
+        where TRole : IdentityRole {
+        private OpenAccessContext _context;
         private readonly bool _isDisposable;
 
         public RoleStore() {
@@ -31,7 +39,7 @@ namespace AspNet.Identity.DataAccess {
             _isDisposable = true;
         }
 
-        public RoleStore(DataContext context) {
+        public RoleStore(OpenAccessContext context) {
             if (context == null) {
                 throw new ArgumentNullException("context");
             }
@@ -58,7 +66,7 @@ namespace AspNet.Identity.DataAccess {
             _context = null;
         }
 
-        public Task CreateAsync(IdentityRole role) {
+        public Task CreateAsync(TRole role) {
             if (role == null) {
                 throw new ArgumentNullException("role");
             }
@@ -69,7 +77,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult<object>(null);
         }
 
-        public Task UpdateAsync(IdentityRole role) {
+        public Task UpdateAsync(TRole role) {
             if (role == null) {
                 throw new ArgumentNullException("role");
             }
@@ -80,7 +88,7 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult<Object>(null);
         }
 
-        public Task DeleteAsync(IdentityRole role) {
+        public Task DeleteAsync(TRole role) {
             if (role == null) {
                 throw new ArgumentNullException("role");
             }
@@ -91,13 +99,13 @@ namespace AspNet.Identity.DataAccess {
             return Task.FromResult<Object>(null);
         }
 
-        public Task<IdentityRole> FindByIdAsync(Guid roleId) {
-            var role = _context.Roles.FirstOrDefault(r => r.Id.Equals(roleId));
+        public Task<TRole> FindByIdAsync(Guid roleId) {
+            var role = Roles.FirstOrDefault(r => r.Id.Equals(roleId));
             return Task.FromResult(role);
         }
 
-        public Task<IdentityRole> FindByNameAsync(string roleName) {
-            var role = _context.Roles.FirstOrDefault(r => r.Name == roleName);
+        public Task<TRole> FindByNameAsync(string roleName) {
+            var role = Roles.FirstOrDefault(r => r.Name == roleName);
             return Task.FromResult(role);
         }
 
@@ -106,8 +114,8 @@ namespace AspNet.Identity.DataAccess {
 
         #region IQueryableRoleStore
 
-        public IQueryable<IdentityRole> Roles {
-            get { return _context.Roles; }
+        public IQueryable<TRole> Roles {
+            get { return _context.GetAll<TRole>(); }
         }
 
         #endregion

@@ -21,6 +21,7 @@ namespace AspNet.Identity.DataAccess {
 
     public class IdentityRole : IRole<Guid> {
         public Guid Id { get; set; }
+
         public string Name { get; set; }
 
         public IList<IdentityUser> Users { get; set; }
