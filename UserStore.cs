@@ -513,6 +513,7 @@ namespace AspNet.Identity.DataAccess {
             }
 
             _context.Delete(user);
+            _context.SaveChanges();
 
             return Task.FromResult(0);
         }
